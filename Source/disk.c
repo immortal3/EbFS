@@ -60,7 +60,7 @@ static void sanity_check( int blocknum, const void *data )
 
 /* disk_read will read data given block number */
 
-void disk_read( int blocknum, char *data )
+void disk_read(int blocknum, char *data )
 {
 	sanity_check(blocknum,data);
 
