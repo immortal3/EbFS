@@ -8,6 +8,11 @@
 
 /* defining methods
     For methods description check .c file
+    disk_init : 
+    disk_size :
+    disk_read :
+    disk_write :
+  	disk_close :
 */
 int  disk_init( const char *filename, int nblocks );
 int  disk_size();
