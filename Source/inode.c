@@ -1,12 +1,15 @@
 #include "inode.h"
 #include <stdbool.h>
 
-// Function name : metadata 
+// struct name : metadata 
 // Info : 
 // bool filetype : 0 for file and 1 for directory
+// protection : just like linux ( rwx-rwx-rwx )
 struct metadata
 {
 	bool filetype;
+	bool isvalid;
+	unsigned char protection[3];
 };
 
 
@@ -16,7 +19,7 @@ struct metadata
 // t_indirectblock => triple directed block
 struct blockdata
 {
-	int[MAX_DIRECT_BLOCK] directblock;
+	int directblock[MAX_DIRECT_BLOCK];
 	int indirectblock;
 	int d_indirectblock;
 	int t_indirectblock;
