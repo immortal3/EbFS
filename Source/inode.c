@@ -1,15 +1,15 @@
 #include "inode.h"
 #include <stdbool.h>
+#include <time.h>
 
 // struct name : metadata 
 // Info : 
 // bool filetype : 0 for file and 1 for directory
-// protection : just like linux ( rwx-rwx-rwx )
+// isvalid : inode is valid or not
 struct metadata
 {
 	bool filetype;
 	bool isvalid;
-	unsigned char protection[3];
 };
 
 
