@@ -15,7 +15,7 @@ union block_rw
 int EbFs_format()
 {
 
-	formating_operation();
+	printing_util();
 	printf("\nFormatting Disk\n");
 	if(disk_size()  < MINIMUM_DISk_SIZE )
 	{
@@ -63,7 +63,7 @@ int EbFs_format()
 
 int EbFs_read_superblock()
 {
-	formating_operation();
+	printing_util();
 	union block_rw blk;
 	disk_read(0,blk.data);
 	printf("\n\nTotal Number of inodes : %d\n",blk.sblock.ninodes);
@@ -81,13 +81,13 @@ int EbFs_get_free_block()
 	for (int i = 0; i < blk.sblock.nfreebitmapblocks; ++i)
 	{
 		disk_read(temp,bitmap.data);
-		for (int i = 0; i < 4096; ++i)
+		for (int j = 0; j < 4096; ++j)
 		{
-			if(bitmap.data[i]==0)
+			if(bitmap.data[j]==0)
 			{
-				bitmap.data[i] = 1;
+				bitmap.data[j] = 1;
 				disk_write(temp,bitmap.data);
-				return blk.sblock.freebitmapstart + i + 1;
+				return blk.sblock.freebitmapstart + (i*4096) + j + 1;
 			}
 		}
 		temp = temp + 1;
@@ -96,7 +96,7 @@ int EbFs_get_free_block()
 
 int EbFs_create_file(char data[],long int size)
 {
-	formating_operation();
+	printing_util();
 	printf("Free block found at %d",EbFs_get_free_block());
 	
 }
