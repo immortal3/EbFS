@@ -27,6 +27,7 @@ struct blockdata
 
 struct inode
 {
+	int inode_number; // number of inode
 	struct metadata mdata;
 	struct blockdata bdata;
 };

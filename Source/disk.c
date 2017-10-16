@@ -96,6 +96,9 @@ void disk_close()
 {
 	if(diskfile)
   {
+  		printf("--------------------------------\n");
+  		printf("closing Disk\n");
+  		printf("Summary of Action on disk:\n");
 		printf("%d disk block reads\n",nreads);
 		printf("%d disk block writes\n",nwrites);
 		fclose(diskfile);

@@ -3,10 +3,11 @@
 #include "superblock.c"
 #include "filesystem.h"
 
-union block_write
+union block_rw
 {
 	char data[DISK_BLOCK_SIZE];
 	struct superblock sblock;
+	struct inode iblock;
 };
 
 
@@ -20,7 +21,7 @@ int EbFs_format()
 
 	printf("Formatting disk of Size : %d bytes\n", disk_size() * 4 * 1024 );
 
-	union block_write blk;
+	union block_rw blk;
 	blk.sblock.nblocks = disk_size();
 	// 10% of block can be used for storing inodes
 	blk.sblock.ninodeblocks = disk_size()/10;
@@ -33,7 +34,7 @@ int EbFs_format()
 	disk_write(0,blk.data);
 
 	// writing all inode block to zero
-	union block_write zero;
+	union block_rw zero;
 	memset(zero.data, 0, 4096);
     
 
@@ -45,7 +46,13 @@ int EbFs_format()
     return 1;
 }
 
-
+int EbFs_read_superblock()
+{
+	union block_rw blk;
+	disk_read(0,blk.data);
+	printf("Total Number of inodes : %d\n",blk.sblock.ninodes);
+	printf("Total Number of inode blocks: %d\n",blk.sblock.ninodeblocks);
+}
 int EbFs_create_file()
 {
 

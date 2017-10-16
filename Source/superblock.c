@@ -9,4 +9,5 @@ struct superblock
 	int nblocks;
 	int ninodeblocks;
 	int ninodes;
+	int inodeofroot;
 };
