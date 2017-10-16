@@ -17,13 +17,10 @@ int main()
 
 	// Debug :: printf("Size of inode : %ld byte(s)\n",sizeof(temp));
 	// Debug :: printf("Size of Super block : %ld byte(s)\n",sizeof(s1) );
-<<<<<<< HEAD
 	// Debug :: EbFs_format();
 	// Debug :: 
-	EbFs_read_superblock();
-=======
 	EbFs_format();
->>>>>>> master
+	EbFs_read_superblock();
 	disk_close();
 
 }
