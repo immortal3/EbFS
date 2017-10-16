@@ -18,9 +18,10 @@ int main()
 	// Debug :: printf("Size of inode : %ld byte(s)\n",sizeof(temp));
 	// Debug :: printf("Size of Super block : %ld byte(s)\n",sizeof(s1) );
 	// Debug :: EbFs_format();
-	// Debug :: 
-	EbFs_format();
-	EbFs_read_superblock();
+	// Debug :: EbFs_format();
+	// Debug :: EbFs_read_superblock();
+	char tempstring[] = "hello world";
+	EbFs_create_file(tempstring,sizeof(tempstring));
 	disk_close();
 
 }
