@@ -14,16 +14,11 @@ int main()
  	// Debug :: char bufffer[DISK_BLOCK_SIZE];
 	// Debug :: disk_read(25,bufffer);
 	// Debug :: printf("Readed Value : %s\n", bufffer);
-
 	// Debug :: printf("Size of inode : %ld byte(s)\n",sizeof(temp));
 	// Debug :: printf("Size of Super block : %ld byte(s)\n",sizeof(s1) );
-<<<<<<< HEAD
 	// Debug :: EbFs_format();
 	// Debug :: 
 	EbFs_read_superblock();
-=======
-	EbFs_format();
->>>>>>> master
 	disk_close();
 
 }
