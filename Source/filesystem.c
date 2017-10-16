@@ -33,7 +33,7 @@ int EbFs_format()
 	// calculating total number of inode can be stored on file system
 	blk.sblock.ninodes = (blk.sblock.ninodeblocks * 4 * 1024) / sizeof(temp);
 	blk.sblock.nfreebitmap = blk.sblock.nblocks - blk.sblock.ninodeblocks;
-	blk.sblock.nfreebitmapblocks = blk.sblock.nfreebitmap / (4*1024*8);
+	blk.sblock.nfreebitmapblocks = blk.sblock.nfreebitmap / (4*1024);
 	blk.sblock.freebitmapstart = blk.sblock.ninodeblocks + 1;
 	if(blk.sblock.nfreebitmapblocks == 0)
 	{
@@ -78,17 +78,20 @@ int EbFs_get_free_block()
 	disk_read(0,blk.data);
 	int temp = blk.sblock.freebitmapstart;
 	union block_rw bitmap;
-	disk_read(temp,bitmap.data);
-	for (int i = 0; i < 4096; ++i)
+	for (int i = 0; i < blk.sblock.nfreebitmapblocks; ++i)
 	{
-		if(bitmap.data[i]==0)
+		disk_read(temp,bitmap.data);
+		for (int i = 0; i < 4096; ++i)
 		{
-			bitmap.data[i]=1;
-			disk_write(temp,bitmap.data);
-			return blk.sblock.freebitmapstart + i + 1;
+			if(bitmap.data[i]==0)
+			{
+				bitmap.data[i] = 1;
+				disk_write(temp,bitmap.data);
+				return blk.sblock.freebitmapstart + i + 1;
+			}
 		}
+		temp = temp + 1;
 	}
-
 }
 
 int EbFs_create_file(char data[],long int size)
