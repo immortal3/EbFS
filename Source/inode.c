@@ -8,6 +8,7 @@
 struct metadata
 {
 	bool filetype;
+	bool fastaccess;
 };
 
 
@@ -25,6 +26,7 @@ struct blockdata
 
 struct inode
 {
+	bool isallocated;
 	int inode_number; // number of inode
 	struct metadata mdata;
 	struct blockdata bdata;

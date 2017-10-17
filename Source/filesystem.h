@@ -2,5 +2,5 @@
 #define FILESYSTEM_H
 
 #define MINIMUM_DISk_SIZE 30
-
+#define MAX_INODE_IN_BLOCK 50
 #endif
