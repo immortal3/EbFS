@@ -32,16 +32,18 @@ int EbFs_format()
 	blk.sblock.ninodeblocks = disk_size()/10;
 	struct inode temp;	
 	// calculating total number of inode can be stored on file system
-	blk.sblock.ninodes = (blk.sblock.ninodeblocks * 4 * 1024) / sizeof(temp);
+	blk.sblock.ninodes = 50 * blk.sblock.ninodeblocks;
 	blk.sblock.nfreebitmap = blk.sblock.nblocks - blk.sblock.ninodeblocks;
 	blk.sblock.nfreebitmapblocks = blk.sblock.nfreebitmap / (4*1024);
 	blk.sblock.freebitmapstart = blk.sblock.ninodeblocks + 1;
-	blk.sblock.inodeofroot = 1;
+	blk.sblock.addrRootInode = 1;
+
 	if(blk.sblock.nfreebitmapblocks == 0)
 	{
 		blk.sblock.nfreebitmapblocks = 1;
 	}
-	printf("Size of inode : %d\n",sizeof(temp));
+
+	printf("Size of inode : %ld\n",sizeof(temp));
 	// writing super block data
 	disk_write(0,blk.data);
 
@@ -50,13 +52,14 @@ int EbFs_format()
 	memset(zero.data, 0, 4096);
     
 
-    for(int inode_block = 1; inode_block <= blk.sblock.ninodeblocks; inode_block++)
+    for(int pblock = 1; pblock <= blk.sblock.ninodeblocks; pblock++)
     {
-    	for (int i = 0; i < MAX_INODE_IN_BLOCK; ++i)
+    	//MAX_INODE_IN_BLOCK = 50 in one Physical Block
+    	for (int i = 0; i <= MAX_INODE_IN_BLOCK ; ++i)
     	{
-    		zero.iblks[i].inode_number =   i + (inode_block-1)*MAX_INODE_IN_BLOCK;
+    		zero.iblks[i].addr =   i + (pblock-1)*MAX_INODE_IN_BLOCK;
     	}
-        disk_write(inode_block, zero.data);
+        disk_write(pblock, zero.data);
     }
 
     memset(zero.data, 0, 4096);
@@ -85,6 +88,7 @@ int EbFs_get_free_block()
 	disk_read(0,blk.data);
 	int temp = blk.sblock.freebitmapstart;
 	union block_rw bitmap;
+
 	for (int i = 0; i < blk.sblock.nfreebitmapblocks; ++i)
 	{
 		disk_read(temp,bitmap.data);
@@ -93,7 +97,7 @@ int EbFs_get_free_block()
 			if(bitmap.data[j]==0)
 			{
 				bitmap.data[j] = 1;
-				//disk_write(temp,bitmap.data);
+				disk_write(temp,bitmap.data);
 				return blk.sblock.freebitmapstart + (i*4096) + j + 1;
 			}
 		}
@@ -116,7 +120,7 @@ int EbFs_get_free_inode()
 			{
 				blk.iblks[j].isallocated = 1;
 				disk_write(i,blk.data);
-				printf(" %d is free inode\n",blk.iblks[j].inode_number);
+				printf(" %d is free inode\n",blk.iblks[j].addr);
 				return 0;
 			}
 		}
@@ -124,16 +128,85 @@ int EbFs_get_free_inode()
 	return -1;
 
 }
+
 int EbFs_create_file(char data[],long int size)
 {
 	printing_util();
-	return EbFs_get_free_inode();
+
+	union block_rw blk;
+	int newInodeAddr = EbFs_get_free_inode();
+	
+	int inodeblockno = newInodeAddr / 50 ;
+	inodeblockno++;
+	union block_rw inodeblock;
+	disk_read(inodeblockno,inodeblock.data);
+
+	//if less than 4kb(pblock size) * 12(direct blocks) = 48 kbytes
+	if(size <= 4096 * 12)
+	{	
+		int c = 0;
+		for (int i = size ; i > 0 ; i -= 4096 )
+		{
+			int newBlockAddr = EbFs_get_free_block();
+			memset(blk.data,0,4096);
+			inodeblock.iblks[newInodeAddr%50].bdata.directblock[c] = newBlockAddr;
+			// Debug line : printf("%d\n",inodeblock.iblks[newInodeAddr%50].bdata.directblock[0]);
+			int slice_end = (c+1)*4096;
+			if(i < 4096)
+			{
+				slice_end = (c)*4096 + i;
+			}
+			char *slice_ptr = slice_array(data,c*4096,slice_end);
+			strncpy(blk.data, slice_ptr, 4096);
+			// Debug line :: printf("writing data : %s\n",blk.data);
+			disk_write(newBlockAddr,blk.data);
+			c++;
+
+		}
+	}	
+	disk_write(inodeblockno,inodeblock.data);
+			
+	return 1;	
 	
 }
 
-int EbFs_create_dir()
+int EbFs_read_file(int inodenumber)
 {
-	
+	int inodeblockno = inodenumber / 50 ;
+	inodeblockno++;
+	union block_rw inodeblock;
+	disk_read(inodeblockno,inodeblock.data);
+
+	// For checking allocated physical block
+	/*
+	for (int i = 0; i < 12; ++i)
+	{
+	 	Debug line : printf("Allocated BLock : %d \n", inodeblock.iblks[inodenumber%50].bdata.directblock[i]);
+	} 
+	*/
+	int i = 0;
+	union block_rw readfile;
+	printf("\nReading file :");
+	while(true)
+	{	
+		// reading 12 direct blocks
+		if(i <= 12 && inodeblock.iblks[inodenumber%50].bdata.directblock[i] != 0)
+		{
+			disk_read(inodeblock.iblks[inodenumber%50].bdata.directblock[i],readfile.data);
+			printf("%s\n",readfile.data);
+		}
+		else if(i <= 12 && inodeblock.iblks[inodenumber%50].bdata.directblock[i] == 0)
+		{
+			break;
+		}
+		i++;
+	}
+
+}
+
+int EbFs_create_dir(char* name)
+{
+
 }
 
 int EbFs_delete_file()

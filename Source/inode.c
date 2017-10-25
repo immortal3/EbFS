@@ -11,7 +11,6 @@ struct metadata
 	bool fastaccess;
 };
 
-
 // 
 //   
 // d_indirectblock => double directed block
@@ -27,7 +26,7 @@ struct blockdata
 struct inode
 {
 	bool isallocated;
-	int inode_number; // number of inode
+	int addr;	//address of inode
 	struct metadata mdata;
 	struct blockdata bdata;
 };

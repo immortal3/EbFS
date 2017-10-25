@@ -12,7 +12,7 @@ struct superblock
 	int nblocks;
 	int ninodeblocks;
 	int ninodes;
-	int inodeofroot;
+	int addrRootInode;
 	int nfreebitmap;
 	int nfreebitmapblocks;
 	int freebitmapstart;

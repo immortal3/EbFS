@@ -17,12 +17,24 @@ int main()
 
 	// Debug :: printf("Size of inode : %ld byte(s)\n",sizeof(temp));
 	// Debug :: printf("Size of Super block : %ld byte(s)\n",sizeof(s1) );
-	// Debug :: EbFs_format();
+	// Debug :: 
+	EbFs_format();
 	// Debug :: EbFs_read_superblock();
-	char tempstring[] = "hello world";
-	
-	EbFs_create_file(tempstring,sizeof(tempstring));
-	disk_close();
+	// Debug :: 
+	char filename[] = "morethan4kb.txt";
+	// Important Note : tempstring should be greater than file size
+	// Debug :: 
+	char tempstring[13000] ;
+	// Debug :: 
+	char *wholefile = read_Whole_file(filename);
+	// Debug :: 
+	strcpy(tempstring,read_Whole_file(filename));
+	// Debug :: 
+	free(wholefile);
+	// Debug :: 
+	EbFs_create_file(tempstring, sizeof(tempstring));
 
+	EbFs_read_file(0);
+	disk_close();
 }
 
