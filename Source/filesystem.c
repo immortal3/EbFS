@@ -3,6 +3,7 @@
 #include "superblock.c"
 #include "filesystem.h"
 #include "util.c"
+#include "randomUtil.c"
 
 union block_rw
 {
@@ -186,6 +187,11 @@ int EbFs_read_file(int inodenumber)
 	*/
 	int i = 0;
 	union block_rw readfile;
+	if(inodeblock.iblks[inodenumber%50].bdata.directblock[0] == 0)
+	{
+		printf("Empty file\n");
+		return -1;
+	}
 	printf("\nReading file :");
 	while(true)
 	{	
@@ -209,7 +215,32 @@ int EbFs_create_dir(char* name)
 
 }
 
-int EbFs_delete_file()
+int EbFs_delete_file(int inodenumber)
 {
-	
+	int inodeblockno = inodenumber / 50 ;
+	inodeblockno++;
+	union block_rw inodeblock;
+	disk_read(inodeblockno,inodeblock.data);
+	int i = 0;
+	union block_rw readfile;
+	printf("\nReading file :");
+	while(true)
+	{	
+		// reading 12 direct blocks
+		if(i <= 12 && inodeblock.iblks[inodenumber%50].bdata.directblock[i] != 0)
+		{
+			char random_4_kb[4096];
+			strcpy(random_4_kb,generate_char_array(4096));
+			inodeblock.iblks[inodenumber%50].bdata.directblock[i] = 0;
+			disk_write(inodeblock.iblks[inodenumber%50].bdata.directblock[i],random_4_kb);
+		}
+		else if(i <= 12 && inodeblock.iblks[inodenumber%50].bdata.directblock[i] == 0)
+		{
+			break;
+		}
+		i++;
+	}
+	inodeblock.iblks[inodenumber%50].isallocated = 0;
+	disk_write(inodeblockno,inodeblock.data);
+	return 1;
 }

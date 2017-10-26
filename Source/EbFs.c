@@ -35,6 +35,12 @@ int main()
 	EbFs_create_file(tempstring, sizeof(tempstring));
 
 	EbFs_read_file(0);
+	
+
+	// Debug ::  EbFs_delete_file(0);
+
+	EbFs_read_file(0);
+	
 	disk_close();
 }
 
