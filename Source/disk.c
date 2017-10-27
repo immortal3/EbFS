@@ -81,7 +81,7 @@ void disk_write( int blocknum, const char *data )
 	sanity_check(blocknum,data);
 
 	fseek(diskfile,blocknum*DISK_BLOCK_SIZE,SEEK_SET);
-
+	// Debug :: printf("Writing blocknum : %d\n",blocknum);
 	if(fwrite(data,DISK_BLOCK_SIZE,1,diskfile)==1) {
 		nwrites++;
 	} else {

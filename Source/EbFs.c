@@ -1,5 +1,6 @@
 #include <stdio.h>
 #include "filesystem.c"
+
 int main()
 {
 
@@ -32,15 +33,15 @@ int main()
 	// Debug :: 
 	free(wholefile);
 	// Debug :: 
-	EbFs_create_file(tempstring, sizeof(tempstring));
+	char filename1[] = "test";
+	EbFs_create_file(tempstring, sizeof(tempstring),filename1,false);
 
-	EbFs_read_file(0);
-	
+	// Debug :: EbFs_read_file(1);	
 
 	// Debug ::  EbFs_delete_file(0);
-
+	// Debug :: char tempdata[] = "helloworld";
+	// Debug :: EbFs_append_file(tempdata , sizeof(tempdata), 1);
 	EbFs_read_file(0);
-	
 	disk_close();
 }
 
