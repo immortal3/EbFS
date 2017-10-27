@@ -35,12 +35,20 @@ int main()
 	// Debug :: 
 	char filename1[] = "test";
 	EbFs_create_file(tempstring, sizeof(tempstring),filename1,false);
+	char filename2[] = "testfolder";
+	EbFs_create_file("",1,filename2,true);
 
 	// Debug :: EbFs_read_file(1);	
 
 	// Debug ::  EbFs_delete_file(0);
 	// Debug :: char tempdata[] = "helloworld";
 	// Debug :: EbFs_append_file(tempdata , sizeof(tempdata), 1);
+	char filename3[] = "testfolder";
+	change_directory(filename3);
+	char filename4[] = "newfile";
+	char tempstring1[] = "new content";
+	EbFs_create_file(tempstring1, sizeof(tempstring1),filename4,false);
+	print_current_directory();
 	EbFs_read_file(0);
 	disk_close();
 }

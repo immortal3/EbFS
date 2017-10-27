@@ -1,18 +1,16 @@
 #include "disk.c"
 #include "inode.c"
 #include "superblock.c"
-#include "filesystem.h"
 #include "util.c"
 #include "randomUtil.c"
+#include "filesystem.h"
 
 static int CurrDirInode = 0;
-
 struct file_entry
 {
 	char filename[28];
 	int inodenumber;
 };
-
 union block_rw
 {
 	char data[DISK_BLOCK_SIZE];
@@ -23,11 +21,48 @@ union block_rw
 };
 
 
-int initRootDir(){
+int initRootDir()
+{
 
 	//Create File for root directory :: (filename, inodenumber) structure
 	printf("Creating Root dir\n");
-	EbFs_create_file("1",sizeof(char),(char *)"root",true);
+	EbFs_create_file("superblock",sizeof(char)*10,(char *)"root",true);
+}
+
+int print_current_directory()
+{
+	EbFs_read_file(CurrDirInode);
+}
+
+int change_directory(const char  *dirname)
+{
+	int inodeblockno = CurrDirInode / 50 ;
+	inodeblockno++;
+	union block_rw inodeblock;
+	disk_read(inodeblockno,inodeblock.data);
+
+	if(inodeblock.iblks[CurrDirInode%50].mdata.filetype)
+	{
+		int i = 0;
+		union block_rw readfile;
+		disk_read(inodeblock.iblks[CurrDirInode%50].bdata.directblock[0],readfile.data);
+		for (int i = 0; i < 128; ++i)
+		{	
+			if(!readfile.files[i].filename[0])
+			{
+				printf("No Directory Found !!\n");
+				return -1;
+			}
+			if(!strcmp(readfile.files[i].filename,dirname))
+			{
+				CurrDirInode = readfile.files[i].inodenumber;
+				printf("CurrDirInode : %d\n",CurrDirInode );
+				// Debug :: printf("\nCurr inode : %d",readfile.files[i].inodenumber);
+				return 1;
+			}
+		}
+	}
+
 }
 
 int EbFs_format()
@@ -140,7 +175,6 @@ int Ebfs_entery_file_in_dir(char filename[],int fileinode)
 			memcpy(readfile.files[i].filename,tempcpy,sizeof(char) * 28);
 			readfile.files[i].inodenumber = fileinode;
 			disk_write(inodeblock.iblks[CurrDirInode%50].bdata.directblock[0],readfile.data);
-			printf("readfile data : %s\n", readfile.data);
 			break;
 		} 
 	}
@@ -174,7 +208,6 @@ int EbFs_get_free_inode()
 			{
 				blk.iblks[j].isallocated = 1;
 				disk_write(i,blk.data);
-				printf(" %d inode is allocated\n",blk.iblks[j].addr);
 				return blk.iblks[j].addr;
 			}
 		}
@@ -268,7 +301,6 @@ int EbFs_append_file(char data[], long int size, int inodenumber)
 	{
 		memcpy(readfile.data + i, data, size);
 		disk_write(inodeblock.iblks[inodenumber%50].bdata.directblock[i],readfile.data);
-		printf("here appending file\n");
 	}
 	else
 	{
@@ -318,18 +350,13 @@ int EbFs_read_file(int inodenumber)
 		printf("Reading Directory\n");
 		int i = 0;
 		union block_rw readfile;
-		if(inodeblock.iblks[inodenumber%50].bdata.directblock[0] == 0)
-		{
-			printf("Empty file\n");
-			return -1;
-		}
 		disk_read(inodeblock.iblks[inodenumber%50].bdata.directblock[0],readfile.data);
 		for (int i = 0; i < 128; ++i)
 		{	
 			if(!readfile.files[i].filename[0])
 			{
-				break
-;			}
+				break;
+			}
 			printf("\nFilename : %s Inode number : %d",readfile.files[i].filename,readfile.files[i].inodenumber);
 		}
 	}
