@@ -3,6 +3,7 @@
 #include "superblock.c"
 #include "util.c"
 #include "randomUtil.c"
+#include "stack.c"
 #include "filesystem.h"
 
 static int CurrDirInode = 0;
@@ -34,6 +35,11 @@ int print_current_directory()
 	EbFs_read_file(CurrDirInode);
 }
 
+
+int go_back_to_parent_directory()
+{
+	CurrDirInode = popdir();
+}
 int change_directory(const char  *dirname)
 {
 	int inodeblockno = CurrDirInode / 50 ;
@@ -55,6 +61,7 @@ int change_directory(const char  *dirname)
 			}
 			if(!strcmp(readfile.files[i].filename,dirname))
 			{
+				pushdir(CurrDirInode);
 				CurrDirInode = readfile.files[i].inodenumber;
 				printf("CurrDirInode : %d\n",CurrDirInode );
 				// Debug :: printf("\nCurr inode : %d",readfile.files[i].inodenumber);
@@ -132,6 +139,7 @@ int EbFs_read_superblock()
 	printf("\n\nTotal Number of inodes : %d\n",blk.sblock.ninodes);
 	printf("Total Number of inode blocks: %d\n",blk.sblock.ninodeblocks);
 	printf("Total Number of Free Bit map block: %d\n",blk.sblock.nfreebitmapblocks);
+	printf("Free Bit map block start: %d\n",blk.sblock.freebitmapstart);
 }
 
 
@@ -188,9 +196,9 @@ int EbFs_release_pBlock(int blockno)
 	disk_read(0,blk.data);
 	int temp = blk.sblock.freebitmapstart;
 	union block_rw bitmap;
-
-
 }
+
+
 
 int EbFs_get_free_inode()
 {
@@ -329,7 +337,34 @@ int EbFs_append_file(char data[], long int size, int inodenumber)
 		disk_write(inodeblockno,inodeblock.data);
 	}
 }
+int EbFs_file_inodenumber(char filename[])
+{
+	printing_util();
+	int inodeblockno = CurrDirInode / 50 ;
+	inodeblockno++;
+	union block_rw inodeblock;
+	disk_read(inodeblockno,inodeblock.data);
 
+	if(inodeblock.iblks[CurrDirInode%50].mdata.filetype)
+	{
+		int i = 0;
+		union block_rw readfile;
+		disk_read(inodeblock.iblks[CurrDirInode%50].bdata.directblock[0],readfile.data);
+		for (int i = 0; i < 128; ++i)
+		{	
+			if(!readfile.files[i].filename[0])
+			{
+				break;
+			}
+			else if(!strcmp(readfile.files[i].filename,filename))
+			{
+				return readfile.files[i].inodenumber;
+			}
+		}
+	}
+
+	return -1;
+}
 int EbFs_read_file(int inodenumber)
 {
 	printing_util();
@@ -388,9 +423,18 @@ int EbFs_read_file(int inodenumber)
 
 }
 
-
-int EbFs_create_dir(char* name)
+int EbFs_set_free_block(int blockno)
 {
+	union block_rw blk;
+	disk_read(0,blk.data);
+	int access_bitmap_block = blockno / 4096;
+	int temp = blk.sblock.freebitmapstart + access_bitmap_block;
+	union block_rw bitmap;
+	printf("freeing block:%d\n",blockno);
+	disk_read(temp,bitmap.data);
+	bitmap.data[(blockno-blk.sblock.freebitmapstart-blk.sblock.nfreebitmapblocks+1)%4096] = 0;
+	disk_write(temp,bitmap.data);
+	return 1;
 
 }
 
@@ -402,7 +446,6 @@ int EbFs_delete_file(int inodenumber)
 	disk_read(inodeblockno,inodeblock.data);
 	int i = 0;
 	union block_rw readfile;
-	printf("\nReading file :");
 	while(true)
 	{	
 		// reading 12 direct blocks
@@ -410,8 +453,9 @@ int EbFs_delete_file(int inodenumber)
 		{
 			char random_4_kb[4096];
 			strcpy(random_4_kb,generate_char_array(4096));
-			inodeblock.iblks[inodenumber%50].bdata.directblock[i] = 0;
+			EbFs_set_free_block(inodeblock.iblks[inodenumber%50].bdata.directblock[i]);
 			disk_write(inodeblock.iblks[inodenumber%50].bdata.directblock[i],random_4_kb);
+			inodeblock.iblks[inodenumber%50].bdata.directblock[i] = 0;
 		}
 		else if(i <= 12 && inodeblock.iblks[inodenumber%50].bdata.directblock[i] == 0)
 		{

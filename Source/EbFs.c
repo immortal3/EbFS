@@ -27,11 +27,9 @@ int main()
 	// Debug :: 
 	char tempstring[13000] ;
 	// Debug :: 
-	char *wholefile = read_Whole_file(filename);
 	// Debug :: 
 	strcpy(tempstring,read_Whole_file(filename));
 	// Debug :: 
-	free(wholefile);
 	// Debug :: 
 	char filename1[] = "test";
 	EbFs_create_file(tempstring, sizeof(tempstring),filename1,false);
@@ -49,7 +47,11 @@ int main()
 	char tempstring1[] = "new content";
 	EbFs_create_file(tempstring1, sizeof(tempstring1),filename4,false);
 	print_current_directory();
-	EbFs_read_file(0);
+	go_back_to_parent_directory();
+	print_current_directory();
+	printf(" test file inode : %d\n",EbFs_file_inodenumber("test") );
+	EbFs_delete_file(EbFs_file_inodenumber("test"));
+	printf("Free inode : %d\n",EbFs_get_free_inode());
 	disk_close();
 }
 
