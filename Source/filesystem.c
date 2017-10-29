@@ -7,11 +7,15 @@
 #include "filesystem.h"
 
 static int CurrDirInode = 0;
+
+
 struct file_entry
 {
 	char filename[28];
 	int inodenumber;
 };
+
+
 union block_rw
 {
 	char data[DISK_BLOCK_SIZE];
@@ -24,26 +28,29 @@ union block_rw
 };
 
 
-int initRootDir()
+void initRootDir()
 {
 
-	//Create File for root directory :: (filename, inodenumber) structure
-	printf("Creating Root dir\n");
+	// initializing root directory
 	EbFs_create_file("superblock",sizeof(char)*10,(char *)"root",true);
 }
 
+// Function info : Displaying Current Directory's content
 int print_current_directory()
 {
 	EbFs_read_file(CurrDirInode);
 }
 
-
+// Function info : using stack go back to parent directroy
 int go_back_to_parent_directory()
 {
 	CurrDirInode = popdir();
 }
+
+// Function info : go into child directory like cd command in linux
 int change_directory(const char  *dirname)
 {
+
 	int inodeblockno = CurrDirInode / 50 ;
 	inodeblockno++;
 	union block_rw inodeblock;
@@ -66,7 +73,6 @@ int change_directory(const char  *dirname)
 				pushdir(CurrDirInode);
 				CurrDirInode = readfile.files[i].inodenumber;
 				printf("CurrDirInode : %d\n",CurrDirInode );
-				// Debug :: printf("\nCurr inode : %d",readfile.files[i].inodenumber);
 				return 1;
 			}
 		}
@@ -74,6 +80,9 @@ int change_directory(const char  *dirname)
 
 }
 
+
+// Function info : Formatting Disk and creating all four partitions
+//				   creating superblock , inodeblocks , bitmap blocks and data blocks
 int EbFs_format()
 {
 
@@ -133,18 +142,21 @@ int EbFs_format()
     return 1;
 }
 
+// Function info : Reading all stored information in super blocks
 int EbFs_read_superblock()
 {
-	printing_util();
 	union block_rw blk;
 	disk_read(0,blk.data);
 	printf("\n\nTotal Number of inodes : %d\n",blk.sblock.ninodes);
 	printf("Total Number of inode blocks: %d\n",blk.sblock.ninodeblocks);
+	printf("Total number of Bitmap:%d\n",blk.sblock.nfreebitmap );
 	printf("Total Number of Free Bit map block: %d\n",blk.sblock.nfreebitmapblocks);
 	printf("Free Bit map block start: %d\n",blk.sblock.freebitmapstart);
+	printf("Address of Root inode number: %d\n",blk.sblock.addrRootInode);
+	printf("Total number of Blocks :%d \n",blk.sblock.nblocks);
 }
 
-
+// Function info : Return free data block for storing inforamtion
 int EbFs_get_free_block()
 {
 	union block_rw blk;
@@ -167,6 +179,8 @@ int EbFs_get_free_block()
 		temp = temp + 1;
 	}
 }
+
+// Function info : Registering file with current directory
 int Ebfs_entery_file_in_dir(char filename[],int fileinode)
 {	
 	printf("Creating File with name :%s\n",filename );
@@ -191,17 +205,7 @@ int Ebfs_entery_file_in_dir(char filename[],int fileinode)
 }
 
 
-
-int EbFs_release_pBlock(int blockno)
-{
-	union block_rw blk;
-	disk_read(0,blk.data);
-	int temp = blk.sblock.freebitmapstart;
-	union block_rw bitmap;
-}
-
-
-
+// Function info : get free inode for creating file or dir
 int EbFs_get_free_inode()
 {
 	union block_rw sblk;
@@ -226,11 +230,9 @@ int EbFs_get_free_inode()
 
 }
 
-
+// Function info : creating file or dir with given content
 int EbFs_create_file(char data[],long int size, char name[],bool isDir)
 {
-	printing_util();
-
 	union block_rw blk;
 	int newInodeAddr = EbFs_get_free_inode();
 	printf("File Inode : %d\n",newInodeAddr);
@@ -249,7 +251,6 @@ int EbFs_create_file(char data[],long int size, char name[],bool isDir)
 			memset(blk.data,0,4096);
 			inodeblock.iblks[newInodeAddr%50].mdata.filetype = isDir;
 			inodeblock.iblks[newInodeAddr%50].bdata.directblock[c] = newBlockAddr;
-			// Debug line : printf("%d\n",inodeblock.iblks[newInodeAddr%50].bdata.directblock[c]);
 			int slice_end = (c+1)*4096;
 			if(i < 4096)
 			{
@@ -257,7 +258,6 @@ int EbFs_create_file(char data[],long int size, char name[],bool isDir)
 			}
 			char *slice_ptr = slice_array(data,c*4096,slice_end);
 			strncpy(blk.data, slice_ptr, 4096);
-			// Debug line :: printf("writing data : %s\n",blk.data);
 			disk_write(newBlockAddr,blk.data);
 			c++;
 
@@ -266,12 +266,12 @@ int EbFs_create_file(char data[],long int size, char name[],bool isDir)
 	disk_write(inodeblockno,inodeblock.data);
 
 	//File Entry in current directory
-	// 
 	Ebfs_entery_file_in_dir(name,newInodeAddr);
 			
 	return 1;		
 }
 
+// Function info : appending existing file with new content
 int EbFs_append_file(char data[], long int size, int inodenumber)
 {	
 	printf("calling append file\n");
@@ -339,6 +339,8 @@ int EbFs_append_file(char data[], long int size, int inodenumber)
 		disk_write(inodeblockno,inodeblock.data);
 	}
 }
+
+// Function info : retunr inode number of given filename from current directory
 int EbFs_file_inodenumber(char filename[])
 {
 	printing_util();
@@ -367,9 +369,12 @@ int EbFs_file_inodenumber(char filename[])
 
 	return -1;
 }
+
+
+// Function info : reading file or dir given inode number
 int EbFs_read_file(int inodenumber)
 {
-	printing_util();
+
 	int inodeblockno = inodenumber / 50 ;
 	inodeblockno++;
 	union block_rw inodeblock;
@@ -417,6 +422,7 @@ int EbFs_read_file(int inodenumber)
 
 }
 
+// Function info : releasing allocated data block for physically deleting file
 int EbFs_set_free_block(int blockno)
 {
 	union block_rw blk;
@@ -431,6 +437,8 @@ int EbFs_set_free_block(int blockno)
 	return 1;
 
 }
+
+// Function info : deleting entry of file from current directory(call by delete file method)
 int EbFs_delete_file_entery_in_dir(int fileinodenumber)
 {
 	int inodeblockno = CurrDirInode / 50 ;
@@ -468,6 +476,8 @@ int EbFs_delete_file_entery_in_dir(int fileinodenumber)
 
 	return -1;
 }
+
+// Function info : deleting directory by giving inodenumber from current directory
 int EbFs_delete_directory(int inodenumber)
 {
 	printing_util();
@@ -496,7 +506,7 @@ int EbFs_delete_directory(int inodenumber)
 }
 
 
-
+// Function info : deleting only file given filename
 int EbFs_delete_file(int inodenumber)
 {
 	int inodeblockno = inodenumber / 50 ;

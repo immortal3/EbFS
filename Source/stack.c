@@ -1,7 +1,7 @@
 
 #define MAXSIZE 15
 
- 
+// for managing directory stack
 struct stack
 {
     int stk[MAXSIZE];
@@ -11,6 +11,7 @@ struct stack
 
 stack stackdir;
 
+// Function info : pushing directory means going into child directory
 void pushdir (int num)
 {
     if (stackdir.top == (MAXSIZE - 1))
@@ -25,7 +26,7 @@ void pushdir (int num)
     return;
 }
 
-/*  Function to delete an element from the stack */
+// Function info : poping directory means going back to parent directory
 int popdir ()
 {
     int num;

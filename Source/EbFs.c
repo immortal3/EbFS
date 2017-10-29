@@ -20,7 +20,8 @@ int main()
 	// Debug :: printf("Size of Super block : %ld byte(s)\n",sizeof(s1) );
 	// Debug :: 
 	EbFs_format();
-	// Debug :: EbFs_read_superblock();
+	// Debug :: 
+	EbFs_read_superblock();
 	// Debug :: 
 	char filename[] = "morethan4kb.txt";
 	// Important Note : tempstring should be greater than file size

@@ -6,13 +6,17 @@
 #define DISK_BLOCK_SIZE 4096
 
 
-/* defining methods
-    For methods description check .c file
-    disk_init : 
-    disk_size :
-    disk_read :
-    disk_write :
-  	disk_close :
+/*
+
+ defining methods
+
+    disk_init : intitalizing disk
+    disk_size : return size of disk interms of number of blocks
+    disk_read : reading block from disk given block number
+    disk_write : writing block into disk given block number and data
+  	disk_close : closing virtual disk
+
+
 */
 int  disk_init( const char *filename, int nblocks );
 int  disk_size();

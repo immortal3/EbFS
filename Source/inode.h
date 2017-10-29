@@ -1,7 +1,5 @@
 #ifndef INODE_H
 #define INODE_H
-
-// maximum number of inodes
-#define MAX_INODE 1024
+// maximum number of direct block 
 #define MAX_DIRECT_BLOCK 12
 #endif

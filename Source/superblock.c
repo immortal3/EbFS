@@ -1,9 +1,12 @@
 
-//
+//	Data structure of Super block
 //	
+//
+//
 //	nblocks => total number of blocks
 //	ninodeblocks => total number of inode blocks
 //	ninodes => total number of inodes
+//  addrRootInode => inodenumber of root node
 //  nfreebitmap => total number of free bitmap 
 //	nfreebitmapblocks => total number of block reuqire to store bitmap
 //	freebitmapstart => starting block of free bitmap
