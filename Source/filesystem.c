@@ -8,14 +8,16 @@
 
 static int CurrDirInode = 0;
 
-
+// Data structure for File entrying Directory
+// Total size of file_entry => 32 bytes
 struct file_entry
 {
 	char filename[28];
 	int inodenumber;
 };
 
-
+// union block_rw => block read and write
+// Total size of block_rw => 4096 bytes = 4kb
 union block_rw
 {
 	char data[DISK_BLOCK_SIZE];
