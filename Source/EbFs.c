@@ -49,9 +49,11 @@ int main()
 	print_current_directory();
 	go_back_to_parent_directory();
 	print_current_directory();
-	printf(" test file inode : %d\n",EbFs_file_inodenumber("test") );
-	EbFs_delete_file(EbFs_file_inodenumber("test"));
-	printf("Free inode : %d\n",EbFs_get_free_inode());
+	// Debug :: printf(" test file inode : %d\n",EbFs_file_inodenumber("test") );
+	printf("free block :%d\n",EbFs_get_free_block());
+	EbFs_delete_directory(EbFs_file_inodenumber("testfolder"));
+	printf("free block :%d\n",EbFs_get_free_block());
+	print_current_directory();
 	disk_close();
 }
 

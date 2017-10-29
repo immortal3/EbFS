@@ -15,10 +15,12 @@ struct file_entry
 union block_rw
 {
 	char data[DISK_BLOCK_SIZE];
+	// for reading suber block
 	struct superblock sblock;
-	struct inode iblock;
+	// Total number of inode in given block
 	struct inode iblks[MAX_INODE_IN_BLOCK];
-	struct file_entry files[128];  // MAX_INODE_IN_BLOCK/32 which is 4kb / 32 = 128 files
+	 // MAX_INODE_IN_BLOCK/32 which is 4kb / 32 = 128 files
+	struct file_entry files[128]; 
 };
 
 
@@ -372,14 +374,6 @@ int EbFs_read_file(int inodenumber)
 	inodeblockno++;
 	union block_rw inodeblock;
 	disk_read(inodeblockno,inodeblock.data);
-
-	// For checking allocated physical block
-	/*
-	for (int i = 0; i < 12; ++i)
-	{
-	 	printf("Allocated BLock : %d \n", inodeblock.iblks[inodenumber%50].bdata.directblock[i]);
-	} 
-	*/
 	if(inodeblock.iblks[inodenumber%50].mdata.filetype)
 	{
 		printf("Reading Directory\n");
@@ -437,6 +431,71 @@ int EbFs_set_free_block(int blockno)
 	return 1;
 
 }
+int EbFs_delete_file_entery_in_dir(int fileinodenumber)
+{
+	int inodeblockno = CurrDirInode / 50 ;
+	inodeblockno++;
+	union block_rw inodeblock;
+	disk_read(inodeblockno,inodeblock.data);
+
+	if(inodeblock.iblks[CurrDirInode%50].mdata.filetype)
+	{
+		int i = 0;
+		union block_rw readfile;
+		disk_read(inodeblock.iblks[CurrDirInode%50].bdata.directblock[0],readfile.data);
+		for (int i = 0; i < 128; ++i)
+		{	
+			if(!readfile.files[i].filename[0])
+			{
+				break;
+			}
+			else if(readfile.files[i].inodenumber == fileinodenumber)
+			{
+				for (int j = i; j < 4098; ++j)
+				{
+					if(!readfile.files[j].filename[0])
+					{
+						disk_write(inodeblock.iblks[CurrDirInode%50].bdata.directblock[0],readfile.data);
+						break;
+					}
+					printf("%s\n", readfile.files[j].filename);
+					strcpy(readfile.files[j].filename,readfile.files[j+1].filename);
+					readfile.files[j].inodenumber = readfile.files[j+1].inodenumber;
+				}
+			}
+		}
+	}
+
+	return -1;
+}
+int EbFs_delete_directory(int inodenumber)
+{
+	printing_util();
+	int inodeblockno = inodenumber / 50 ;
+	inodeblockno++;
+	union block_rw inodeblock;
+	disk_read(inodeblockno,inodeblock.data);
+	if(inodeblock.iblks[inodenumber%50].mdata.filetype)
+	{
+		int i = 0;
+		union block_rw readfile;
+		disk_read(inodeblock.iblks[inodenumber%50].bdata.directblock[0],readfile.data);
+		for (int i = 0; i < 128; ++i)
+		{	
+			if(!readfile.files[i].filename[0])
+			{
+				inodeblock.iblks[inodenumber%50].mdata.filetype = 0;
+				disk_write(inodeblockno,inodeblock.data);
+				EbFs_delete_file(inodenumber);
+				break;
+			}
+			printf("%s\n",readfile.files[i].filename );
+			EbFs_delete_file(readfile.files[i].inodenumber);
+		}
+	}
+}
+
+
 
 int EbFs_delete_file(int inodenumber)
 {
@@ -444,26 +503,36 @@ int EbFs_delete_file(int inodenumber)
 	inodeblockno++;
 	union block_rw inodeblock;
 	disk_read(inodeblockno,inodeblock.data);
-	int i = 0;
-	union block_rw readfile;
-	while(true)
-	{	
-		// reading 12 direct blocks
-		if(i <= 12 && inodeblock.iblks[inodenumber%50].bdata.directblock[i] != 0)
-		{
-			char random_4_kb[4096];
-			strcpy(random_4_kb,generate_char_array(4096));
-			EbFs_set_free_block(inodeblock.iblks[inodenumber%50].bdata.directblock[i]);
-			disk_write(inodeblock.iblks[inodenumber%50].bdata.directblock[i],random_4_kb);
-			inodeblock.iblks[inodenumber%50].bdata.directblock[i] = 0;
+	if(!inodeblock.iblks[inodenumber%50].mdata.filetype)
+	{
+		int i = 0;
+		union block_rw readfile;
+		while(true)
+		{	
+			// reading 12 direct blocks
+			if(i <= 12 && inodeblock.iblks[inodenumber%50].bdata.directblock[i] != 0)
+			{
+				char random_4_kb[4096];
+				strcpy(random_4_kb,generate_char_array(4096));
+				EbFs_set_free_block(inodeblock.iblks[inodenumber%50].bdata.directblock[i]);
+				disk_write(inodeblock.iblks[inodenumber%50].bdata.directblock[i],random_4_kb);
+				inodeblock.iblks[inodenumber%50].bdata.directblock[i] = 0;
+			}
+			else if(i <= 12 && inodeblock.iblks[inodenumber%50].bdata.directblock[i] == 0)
+			{
+				break;
+			}
+			i++;
+			
 		}
-		else if(i <= 12 && inodeblock.iblks[inodenumber%50].bdata.directblock[i] == 0)
-		{
-			break;
-		}
-		i++;
+		EbFs_delete_file_entery_in_dir(inodenumber);
+		inodeblock.iblks[inodenumber%50].isallocated = 0;
+		disk_write(inodeblockno,inodeblock.data);
+		return 1;
 	}
-	inodeblock.iblks[inodenumber%50].isallocated = 0;
-	disk_write(inodeblockno,inodeblock.data);
-	return 1;
+	else
+	{
+		printf("Delete Error:: Not Files\n");
+		return -1;
+	}
 }
