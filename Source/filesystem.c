@@ -3,6 +3,7 @@
 #include "superblock.c"
 #include "util.c"
 #include "randomUtil.c"
+#include "aes.c"
 #include "stack.c"
 #include "filesystem.h"
 
@@ -41,6 +42,20 @@ void initRootDir()
 int print_current_directory()
 {
 	EbFs_read_file(CurrDirInode);
+}
+
+
+void disk_write_enc(int blocknum, char *data,char *key)
+{
+	char *enc_msg = (char *)encrypt((unsigned char *)data,(unsigned char *)key, 4096);
+	disk_write(blocknum,enc_msg);
+}
+
+char *disk_read_dec(int blocknum, char *data,char *key)
+{
+	union block_rw tempblk;
+	disk_read(blocknum,tempblk.data);
+	return (char *)decrypt((unsigned char *)tempblk.data, (unsigned char *)key, 4096);
 }
 
 // Function info : using stack go back to parent directroy
