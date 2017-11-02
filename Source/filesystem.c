@@ -319,7 +319,8 @@ int EbFs_append_file(char data[], long int size, int inodenumber,char key[])
 
 	if(size <= 4096 - z)
 	{
-		memcpy(readfile.data + i, data, size);
+		memcpy(readfile.data + z, data, size);
+		printf("%s\n",readfile.data );
 		encrypt(readfile.data,4096, key,strlen(key));
 		disk_write(inodeblock.iblks[inodenumber%50].bdata.directblock[i],readfile.data);
 	}

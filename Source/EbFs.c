@@ -37,13 +37,15 @@ int main()
 	 EbFs_read_file(1,"pass");
 	char filename2[] = "testfolder";
 	EbFs_create_file("",1,filename2,true,"123");
-
-	// Debug :: EbFs_read_file(1);	
-
-	// Debug ::  EbFs_delete_file(0);
-	// Debug :: char tempdata[] = "helloworld";
-	// Debug :: EbFs_append_file(tempdata , sizeof(tempdata), 1);
-	char filename3[] = "testfolder";
+	char tempdata[] = "helloworld";
+	// Debug :: 
+	char filename4[] = "newfile";
+	char tempstring1[] = "new content";
+	EbFs_create_file(tempstring1, sizeof(tempstring1),filename4,false,"12");
+	EbFs_read_file(EbFs_file_inodenumber("newfile"),"12");
+	EbFs_append_file(tempdata , sizeof(tempdata), EbFs_file_inodenumber("newfile") ,"12");
+	EbFs_read_file(EbFs_file_inodenumber("newfile"),"12");
+	/*char filename3[] = "testfolder";	
 	change_directory(filename3);
 	char filename4[] = "newfile";
 	char tempstring1[] = "new content";
@@ -51,7 +53,7 @@ int main()
 	print_current_directory();
 	go_back_to_parent_directory();
 	EbFs_delete_file(EbFs_file_inodenumber("test"));
-	print_current_directory();
+	print_current_directory();*/
 
 	// Debug :: printf(" test file inode : %d\n",EbFs_file_inodenumber("test") );
 /*	printf("free block :%d\n",EbFs_get_free_block());
