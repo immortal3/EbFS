@@ -3,7 +3,7 @@
 #include "superblock.c"
 #include "util.c"
 #include "randomUtil.c"
-#include "aes.c"
+#include "crypto_util.c"
 #include "stack.c"
 #include "filesystem.h"
 
@@ -35,28 +35,17 @@ void initRootDir()
 {
 
 	// initializing root directory
-	EbFs_create_file("superblock",sizeof(char)*10,(char *)"root",true);
+	EbFs_create_file("superblock",sizeof(char)*10,(char *)"root",true,"root");
 }
 
 // Function info : Displaying Current Directory's content
 int print_current_directory()
 {
-	EbFs_read_file(CurrDirInode);
+	EbFs_read_file(CurrDirInode,"no key needed");
 }
 
 
-void disk_write_enc(int blocknum, char *data,char *key)
-{
-	char *enc_msg = (char *)encrypt((unsigned char *)data,(unsigned char *)key, 4096);
-	disk_write(blocknum,enc_msg);
-}
 
-char *disk_read_dec(int blocknum, char *data,char *key)
-{
-	union block_rw tempblk;
-	disk_read(blocknum,tempblk.data);
-	return (char *)decrypt((unsigned char *)tempblk.data, (unsigned char *)key, 4096);
-}
 
 // Function info : using stack go back to parent directroy
 int go_back_to_parent_directory()
@@ -248,7 +237,7 @@ int EbFs_get_free_inode()
 }
 
 // Function info : creating file or dir with given content
-int EbFs_create_file(char data[],long int size, char name[],bool isDir)
+int EbFs_create_file(char data[],long int size, char name[],bool isDir,char key[])
 {
 	union block_rw blk;
 	int newInodeAddr = EbFs_get_free_inode();
@@ -275,6 +264,10 @@ int EbFs_create_file(char data[],long int size, char name[],bool isDir)
 			}
 			char *slice_ptr = slice_array(data,c*4096,slice_end);
 			strncpy(blk.data, slice_ptr, 4096);
+			if(!isDir)
+			{
+				encrypt(blk.data,4096, key,strlen(key));
+			}
 			disk_write(newBlockAddr,blk.data);
 			c++;
 
@@ -289,7 +282,7 @@ int EbFs_create_file(char data[],long int size, char name[],bool isDir)
 }
 
 // Function info : appending existing file with new content
-int EbFs_append_file(char data[], long int size, int inodenumber)
+int EbFs_append_file(char data[], long int size, int inodenumber,char key[])
 {	
 	printf("calling append file\n");
 	int inodeblockno = inodenumber / 50 ;
@@ -311,7 +304,7 @@ int EbFs_append_file(char data[], long int size, int inodenumber)
 	}
 	int c = i;
 	disk_read(inodeblock.iblks[inodenumber%50].bdata.directblock[i],readfile.data);
-
+	decrypt(readfile.data,4096, key,strlen(key));
 
 	// getting length of content in last file
 	int z = 0;
@@ -327,6 +320,7 @@ int EbFs_append_file(char data[], long int size, int inodenumber)
 	if(size <= 4096 - z)
 	{
 		memcpy(readfile.data + i, data, size);
+		encrypt(readfile.data,4096, key,strlen(key));
 		disk_write(inodeblock.iblks[inodenumber%50].bdata.directblock[i],readfile.data);
 	}
 	else
@@ -389,7 +383,7 @@ int EbFs_file_inodenumber(char filename[])
 
 
 // Function info : reading file or dir given inode number
-int EbFs_read_file(int inodenumber)
+int EbFs_read_file(int inodenumber,char key[])
 {
 
 	int inodeblockno = inodenumber / 50 ;
@@ -402,6 +396,7 @@ int EbFs_read_file(int inodenumber)
 		int i = 0;
 		union block_rw readfile;
 		disk_read(inodeblock.iblks[inodenumber%50].bdata.directblock[0],readfile.data);
+		//decrypt(readfile.data,4096, key,strlen(key));
 		for (int i = 0; i < 128; ++i)
 		{	
 			if(!readfile.files[i].filename[0])
@@ -426,7 +421,9 @@ int EbFs_read_file(int inodenumber)
 			// reading 12 direct blocks
 			if(i <= 12 && inodeblock.iblks[inodenumber%50].bdata.directblock[i] != 0)
 			{
+
 				disk_read(inodeblock.iblks[inodenumber%50].bdata.directblock[i],readfile.data);
+				decrypt(readfile.data,4096, key,strlen(key));
 				printf("%s\n",readfile.data);
 			}
 			else if(i <= 12 && inodeblock.iblks[inodenumber%50].bdata.directblock[i] == 0)
