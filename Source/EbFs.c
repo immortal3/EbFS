@@ -34,7 +34,7 @@ int main()
 	// Debug :: 
 	char filename1[] = "test";
 	EbFs_create_file(tempstring, sizeof(tempstring),filename1,false,"pass");
-	 EbFs_read_file(1,"pass");
+	EbFs_read_file(1,"pass");
 	char filename2[] = "testfolder";
 	EbFs_create_file("",1,filename2,true,"123");
 	char tempdata[] = "helloworld";

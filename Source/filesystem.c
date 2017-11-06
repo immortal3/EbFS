@@ -92,7 +92,6 @@ int change_directory(const char  *dirname)
 int EbFs_format()
 {
 
-	printing_util();
 	printf("\nFormatting Disk\n");
 	if(disk_size()  < MINIMUM_DISk_SIZE )
 	{
