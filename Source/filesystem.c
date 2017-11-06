@@ -354,7 +354,7 @@ int EbFs_append_file(char data[], long int size, int inodenumber,char key[])
 // Function info : retunr inode number of given filename from current directory
 int EbFs_file_inodenumber(char filename[])
 {
-	printing_util();
+	
 	int inodeblockno = CurrDirInode / 50 ;
 	inodeblockno++;
 	union block_rw inodeblock;
@@ -494,7 +494,6 @@ int EbFs_delete_file_entery_in_dir(int fileinodenumber)
 // Function info : deleting directory by giving inodenumber from current directory
 int EbFs_delete_directory(int inodenumber)
 {
-	printing_util();
 	int inodeblockno = inodenumber / 50 ;
 	inodeblockno++;
 	union block_rw inodeblock;

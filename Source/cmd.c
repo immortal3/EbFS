@@ -19,16 +19,17 @@ int main(int argc, char const *argv[])
 	EbFs_format();
 	char filename[28];
 	char password[50];
+	int inodetmp;
 	while(1)
 	{
 		// getting first command
-		printf("\n>>>");
+		printf("\n\n>>>");
 		scanf("%s",buffer);
 
 		// Debug :: 
-		printf("%ld\n",hash("createdir"));
+		printf("hash : %ld\n",hash("deletedir"));
 		switch(hash(buffer))
-		{
+		{	 
 			//command : "ls"
 			case 5863588:
 				print_current_directory();
@@ -39,13 +40,44 @@ int main(int argc, char const *argv[])
 				EbFs_read_superblock();
 				break;
 
+			//command : "deletedir"
+			case 249885286463998167:
+				printf("Enter Directory Name:\n");
+				scanf("%s",filename);
+				//checking file is present or not
+				inodetmp = EbFs_file_inodenumber(filename);
+				if(inodetmp == -1)
+				{
+					printf("File doesn't exist\n");
+				}
+				else
+				{
+					EbFs_delete_directory(inodetmp);
+				}
+				
+				break;
+
+			//command : "cdparent"
+			case 7572237649815350:
+				go_back_to_parent_directory();
+				break;
+
+
 			// command : "readfile" read file
 			case 7572877634027873:
 				printf("Enter Filename(max size 28 char):\n");
 				scanf("%s",filename);
-				printf("Enter a password for file:\n");
-				scanf("%s",password);
-				EbFs_read_file(EbFs_file_inodenumber(filename),password);
+				inodetmp = EbFs_file_inodenumber(filename);
+				if(inodetmp == -1)
+				{
+					printf("File doesn't exist\n");
+				}
+				else
+				{
+					printf("Enter a password for file:\n");
+					scanf("%s",password);
+					EbFs_read_file(EbFs_file_inodenumber(filename),password);
+				}
 				break;
 
 			//command : "createfile"
@@ -60,12 +92,36 @@ int main(int argc, char const *argv[])
 				EbFs_create_file(content, strlen(content),filename,false,password);
 				break;
 
+			// command : "cd"
+			case 5863276:
+				printf("Enter Directory Name:\n");
+				scanf("%s",filename);
+				change_directory(filename);
+				break;
+
 			// command : "createdir"
 			case 249884424898321272:
-				printf("Enter Filename(max size 28 char):\n");
+				printf("Enter Directory Name:\n");
 				scanf("%s",filename);
-				EbFs_create_file("",0,filename,true,"no need");
+				EbFs_create_file("",1,filename,true,"no need");
 				break;
+
+			// command : "deletefile"
+			case 8246214453312011288:
+				printf("Enter FileName:\n");
+				scanf("%s",filename);
+				//checking file is present or not
+				inodetmp = EbFs_file_inodenumber(filename);
+				if(inodetmp == -1)
+				{
+					printf("File doesn't exist\n");
+				}
+				else
+				{
+					EbFs_delete_directory(inodetmp);
+				}
+				break;
+
 			// command : "exit"
 			case 6385204799:
 				return 0;
