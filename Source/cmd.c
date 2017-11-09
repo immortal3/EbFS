@@ -88,7 +88,7 @@ int main(int argc, char const *argv[])
 				scanf("%s",password);
 				char content[250000];
 				printf("Enter a content of file\n");
-				scanf("%s",content);
+				scanf("%[^#]s",content);
 				EbFs_create_file(content, strlen(content),filename,false,password);
 				break;
 
