@@ -13,7 +13,7 @@ unsigned long hash(char *str)
 }
 int main(int argc, char const *argv[])
 {
-	char buffer[15];
+	char buffer[15];	
 	printf("\nRunning EbFs");
 	int disk_status = disk_init("Disk_img_500",500);
 	EbFs_format();

@@ -142,6 +142,15 @@ int EbFs_format()
         disk_write(inode_block, zero.data);
     }
 
+    
+
+    char random_4_kb[4096];
+
+    for (int datablock = blk.sblock.ninodeblocks + blk.sblock.nfreebitmapblocks + 1; datablock < blk.sblock.nblocks; ++datablock)
+    {
+    	strcpy(random_4_kb,generate_char_array(4096));
+    	disk_write(datablock, random_4_kb);
+    }
     initRootDir();
     // future work : initializing disk with random numbers after inodes
     return 1;
@@ -177,7 +186,7 @@ int EbFs_get_free_block()
 		disk_read(temp,bitmap.data);
 		if(bitmap.data[rand_blk_int % 4096]==0)
 		{
-				printf("block is allocated : %d\n",rand_blk_int );
+				// Debug :: printf("block is allocated : %d\n",rand_blk_int );
 				bitmap.data[rand_blk_int % 4096] = 1;
 				disk_write(temp,bitmap.data);
 				return rand_blk_int;
@@ -256,7 +265,7 @@ int EbFs_create_file(char data[],long int size, char name[],bool isDir,char key[
 {
 	union block_rw blk;
 	int newInodeAddr = EbFs_get_free_inode();
-	printf("File Inode : %d\n",newInodeAddr);
+	// Debug :: printf("File Inode : %d\n",newInodeAddr);
 	int inodeblockno = newInodeAddr / 50 ;
 	inodeblockno++;
 	union block_rw inodeblock;

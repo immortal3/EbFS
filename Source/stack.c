@@ -33,7 +33,7 @@ int popdir ()
     if (stackdir.top == - 1)
     {
         printf ("In root directory of File system\n");
-        return (stackdir.top);
+        return 0;
     }
     else
     {
