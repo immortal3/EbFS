@@ -34,7 +34,8 @@ int main()
 	// Debug :: 
 	char filename1[] = "test";
 	EbFs_create_file(tempstring, sizeof(tempstring),filename1,false,"pass");
-	//EbFs_read_file(1,"pass");
+	//
+	EbFs_read_file(1,"pass");
 	char filename2[] = "testfolder";
 	EbFs_create_file("",1,filename2,true,"123");
 	char tempdata[] = "helloworld";
@@ -42,7 +43,8 @@ int main()
 	char filename4[] = "newfile";
 	char tempstring1[] = "new content";
 	EbFs_create_file(tempstring1, sizeof(tempstring1),filename4,false,"12");
-	//EbFs_read_file(EbFs_file_inodenumber("newfile"),"12");
+	//
+	EbFs_read_file(EbFs_file_inodenumber("newfile"),"12");
 	EbFs_append_file(tempdata , sizeof(tempdata), EbFs_file_inodenumber("newfile") ,"12");
 	//EbFs_read_file(EbFs_file_inodenumber("newfile"),"12");
 	/*char filename3[] = "testfolder";	

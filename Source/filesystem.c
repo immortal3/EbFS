@@ -33,7 +33,6 @@ union block_rw
 
 void initRootDir()
 {
-
 	// initializing root directory
 	EbFs_create_file("superblock",sizeof(char)*10,(char *)"root",true,"root");
 }
@@ -41,32 +40,40 @@ void initRootDir()
 // Function info : Displaying Current Directory's content
 int print_current_directory()
 {
-	EbFs_read_file(CurrDirInode,"no key needed");
+	return EbFs_read_file(CurrDirInode,"no key needed");
 }
-
 
 
 
 // Function info : using stack go back to parent directroy
 int go_back_to_parent_directory()
 {
+	int temp = CurrDirInode;
 	CurrDirInode = popdir();
+	if(temp == CurrDirInode)
+	{
+		return -1;
+	}
+	else
+	{
+		return 1;
+	}
 }
 
 // Function info : go into child directory like cd command in linux
 int change_directory(const char  *dirname)
 {
 
-	int inodeblockno = CurrDirInode / 50 ;
+	int inodeblockno = CurrDirInode / MAX_INODE_IN_BLOCK ;
 	inodeblockno++;
 	union block_rw inodeblock;
 	disk_read(inodeblockno,inodeblock.data);
 
-	if(inodeblock.iblks[CurrDirInode%50].mdata.filetype)
+	if(inodeblock.iblks[CurrDirInode%MAX_INODE_IN_BLOCK].mdata.filetype)
 	{
 		int i = 0;
 		union block_rw readfile;
-		disk_read(inodeblock.iblks[CurrDirInode%50].bdata.directblock[0],readfile.data);
+		disk_read(inodeblock.iblks[CurrDirInode%MAX_INODE_IN_BLOCK].bdata.directblock[0],readfile.data);
 		for (int i = 0; i < 128; ++i)
 		{	
 			if(!readfile.files[i].filename[0])
@@ -76,15 +83,25 @@ int change_directory(const char  *dirname)
 			}
 			if(!strcmp(readfile.files[i].filename,dirname))
 			{
-				pushdir(CurrDirInode);
-				CurrDirInode = readfile.files[i].inodenumber;
-				printf("CurrDirInode : %d\n",CurrDirInode );
-				return 1;
+				if(debugFD(readfile.files[i].inodenumber,1) == 1)
+				{
+					pushdir(CurrDirInode);
+					CurrDirInode = readfile.files[i].inodenumber;
+					printf("CurrDirInode : %d\n",CurrDirInode );
+					return 1;
+				}
+				else
+				{
+					printf("It is not directory\n");
+					return -5;
+				}
 			}
 		}
 	}
 
 }
+
+
 
 
 // Function info : Formatting Disk and creating all four partitions
@@ -107,7 +124,7 @@ int EbFs_format()
 	blk.sblock.ninodeblocks = disk_size()/10;
 	struct inode temp;	
 	// calculating total number of inode can be stored on file system
-	blk.sblock.ninodes = 50 * blk.sblock.ninodeblocks;
+	blk.sblock.ninodes = MAX_INODE_IN_BLOCK * blk.sblock.ninodeblocks;
 	blk.sblock.nfreebitmap = blk.sblock.nblocks - blk.sblock.ninodeblocks;
 	blk.sblock.nfreebitmapblocks = blk.sblock.nfreebitmap / (4*1024);
 	blk.sblock.freebitmapstart = blk.sblock.ninodeblocks + 1;
@@ -129,7 +146,7 @@ int EbFs_format()
 
     for(int pblock = 1; pblock <= blk.sblock.ninodeblocks; pblock++)
     {
-    	//MAX_INODE_IN_BLOCK = 50 in one Physical Block
+    	//MAX_INODE_IN_BLOCK = MAX_INODE_IN_BLOCK in one Physical Block
     	for (int i = 0; i <= MAX_INODE_IN_BLOCK ; ++i)
     	{
     		zero.iblks[i].addr =   i + (pblock-1)*MAX_INODE_IN_BLOCK;
@@ -215,9 +232,9 @@ int Ebfs_entery_file_in_dir(char filename[],int fileinode)
 {	
 	printf("Creating File with name :%s\n",filename );
 	union block_rw inodeblock;
-	disk_read((CurrDirInode / 50) + 1,inodeblock.data);
+	disk_read((CurrDirInode / MAX_INODE_IN_BLOCK) + 1,inodeblock.data);
 	union block_rw readfile;
-	disk_read(inodeblock.iblks[CurrDirInode%50].bdata.directblock[0],readfile.data);
+	disk_read(inodeblock.iblks[CurrDirInode%MAX_INODE_IN_BLOCK].bdata.directblock[0],readfile.data);
 
 	for (int i = 0; i < 128 ; ++i)
 	{
@@ -228,7 +245,7 @@ int Ebfs_entery_file_in_dir(char filename[],int fileinode)
 			strcpy(tempcpy,filename);
 			memcpy(readfile.files[i].filename,tempcpy,sizeof(char) * 28);
 			readfile.files[i].inodenumber = fileinode;
-			disk_write(inodeblock.iblks[CurrDirInode%50].bdata.directblock[0],readfile.data);
+			disk_write(inodeblock.iblks[CurrDirInode%MAX_INODE_IN_BLOCK].bdata.directblock[0],readfile.data);
 			break;
 		} 
 	}
@@ -266,7 +283,7 @@ int EbFs_create_file(char data[],long int size, char name[],bool isDir,char key[
 	union block_rw blk;
 	int newInodeAddr = EbFs_get_free_inode();
 	// Debug :: printf("File Inode : %d\n",newInodeAddr);
-	int inodeblockno = newInodeAddr / 50 ;
+	int inodeblockno = newInodeAddr / MAX_INODE_IN_BLOCK ;
 	inodeblockno++;
 	union block_rw inodeblock;
 	disk_read(inodeblockno,inodeblock.data);
@@ -279,8 +296,8 @@ int EbFs_create_file(char data[],long int size, char name[],bool isDir,char key[
 		{
 			int newBlockAddr = EbFs_get_free_block();
 			memset(blk.data,0,4096);
-			inodeblock.iblks[newInodeAddr%50].mdata.filetype = isDir;
-			inodeblock.iblks[newInodeAddr%50].bdata.directblock[c] = newBlockAddr;
+			inodeblock.iblks[newInodeAddr%MAX_INODE_IN_BLOCK].mdata.filetype = isDir;
+			inodeblock.iblks[newInodeAddr%MAX_INODE_IN_BLOCK].bdata.directblock[c] = newBlockAddr;
 			int slice_end = (c+1)*4096;
 			if(i < 4096)
 			{
@@ -309,7 +326,7 @@ int EbFs_create_file(char data[],long int size, char name[],bool isDir,char key[
 int EbFs_append_file(char data[], long int size, int inodenumber,char key[])
 {	
 	printf("calling append file\n");
-	int inodeblockno = inodenumber / 50 ;
+	int inodeblockno = inodenumber / MAX_INODE_IN_BLOCK ;
 	inodeblockno++;
 	union block_rw inodeblock;
 	disk_read(inodeblockno,inodeblock.data);
@@ -319,7 +336,7 @@ int EbFs_append_file(char data[], long int size, int inodenumber,char key[])
 
 	while(true)
 	{	
-		if(i <= 12 && inodeblock.iblks[inodenumber%50].bdata.directblock[i] == 0)
+		if(i <= 12 && inodeblock.iblks[inodenumber%MAX_INODE_IN_BLOCK].bdata.directblock[i] == 0)
 		{
 			i--;
 			break;
@@ -327,7 +344,7 @@ int EbFs_append_file(char data[], long int size, int inodenumber,char key[])
 		i++;
 	}
 	int c = i;
-	disk_read(inodeblock.iblks[inodenumber%50].bdata.directblock[i],readfile.data);
+	disk_read(inodeblock.iblks[inodenumber%MAX_INODE_IN_BLOCK].bdata.directblock[i],readfile.data);
 	decrypt(readfile.data,4096, key,strlen(key));
 
 	// getting length of content in last file
@@ -346,20 +363,20 @@ int EbFs_append_file(char data[], long int size, int inodenumber,char key[])
 		memcpy(readfile.data + z, data, size);
 		printf("%s\n",readfile.data );
 		encrypt(readfile.data,4096, key,strlen(key));
-		disk_write(inodeblock.iblks[inodenumber%50].bdata.directblock[i],readfile.data);
+		disk_write(inodeblock.iblks[inodenumber%MAX_INODE_IN_BLOCK].bdata.directblock[i],readfile.data);
 	}
 	else
 	{
 		memcpy(readfile.data + z, data, 4096 - z);
-		disk_write(inodeblock.iblks[inodenumber%50].bdata.directblock[i],readfile.data);
+		disk_write(inodeblock.iblks[inodenumber%MAX_INODE_IN_BLOCK].bdata.directblock[i],readfile.data);
 		size = size - (4096 - z);
 		union block_rw blk;
 		for (int i = size ; i > 0 ; i -= 4096 )
 		{
 			int newBlockAddr = EbFs_get_free_block();
 			memset(blk.data,0,4096);
-			inodeblock.iblks[inodenumber%50].bdata.directblock[c] = newBlockAddr;
-			// Debug line : printf("%d\n",inodeblock.iblks[newInodeAddr%50].bdata.directblock[c]);
+			inodeblock.iblks[inodenumber%MAX_INODE_IN_BLOCK].bdata.directblock[c] = newBlockAddr;
+			// Debug line : printf("%d\n",inodeblock.iblks[newInodeAddr%MAX_INODE_IN_BLOCK].bdata.directblock[c]);
 			int slice_end = (c+1)*4096;
 			if(i < 4096)
 			{
@@ -380,16 +397,16 @@ int EbFs_append_file(char data[], long int size, int inodenumber,char key[])
 int EbFs_file_inodenumber(char filename[])
 {
 	
-	int inodeblockno = CurrDirInode / 50 ;
+	int inodeblockno = CurrDirInode / MAX_INODE_IN_BLOCK ;
 	inodeblockno++;
 	union block_rw inodeblock;
 	disk_read(inodeblockno,inodeblock.data);
 
-	if(inodeblock.iblks[CurrDirInode%50].mdata.filetype)
+	if(inodeblock.iblks[CurrDirInode%MAX_INODE_IN_BLOCK].mdata.filetype)
 	{
 		int i = 0;
 		union block_rw readfile;
-		disk_read(inodeblock.iblks[CurrDirInode%50].bdata.directblock[0],readfile.data);
+		disk_read(inodeblock.iblks[CurrDirInode%MAX_INODE_IN_BLOCK].bdata.directblock[0],readfile.data);
 		for (int i = 0; i < 128; ++i)
 		{	
 			if(!readfile.files[i].filename[0])
@@ -411,16 +428,16 @@ int EbFs_file_inodenumber(char filename[])
 int EbFs_read_file(int inodenumber,char key[])
 {
 
-	int inodeblockno = inodenumber / 50 ;
+	int inodeblockno = inodenumber / MAX_INODE_IN_BLOCK ;
 	inodeblockno++;
 	union block_rw inodeblock;
 	disk_read(inodeblockno,inodeblock.data);
-	if(inodeblock.iblks[inodenumber%50].mdata.filetype)
+	if(inodeblock.iblks[inodenumber%MAX_INODE_IN_BLOCK].mdata.filetype)
 	{
 		printf("Reading Directory\n");
 		int i = 0;
 		union block_rw readfile;
-		disk_read(inodeblock.iblks[inodenumber%50].bdata.directblock[0],readfile.data);
+		disk_read(inodeblock.iblks[inodenumber%MAX_INODE_IN_BLOCK].bdata.directblock[0],readfile.data);
 		//decrypt(readfile.data,4096, key,strlen(key));
 		for (int i = 0; i < 128; ++i)
 		{	
@@ -428,14 +445,14 @@ int EbFs_read_file(int inodenumber,char key[])
 			{
 				break;
 			}
-			printf("\nFilename : %s Inode number : %d",readfile.files[i].filename,readfile.files[i].inodenumber);
+			printf("\nFilename : %s \tInode number : %d \tFileType: %d",readfile.files[i].filename,readfile.files[i].inodenumber,debugFD(readfile.files[i].inodenumber,1));
 		}
 	}
 	else 
 	{
 		int i = 0;
 		union block_rw readfile;
-		if(inodeblock.iblks[inodenumber%50].bdata.directblock[0] == 0)
+		if(inodeblock.iblks[inodenumber%MAX_INODE_IN_BLOCK].bdata.directblock[0] == 0)
 		{
 			printf("Empty file\n");
 			return -1;
@@ -444,14 +461,14 @@ int EbFs_read_file(int inodenumber,char key[])
 		while(true)
 		{	
 			// reading 12 direct blocks
-			if(i <= 12 && inodeblock.iblks[inodenumber%50].bdata.directblock[i] != 0)
+			if(i <= 12 && inodeblock.iblks[inodenumber%MAX_INODE_IN_BLOCK].bdata.directblock[i] != 0)
 			{
 
-				disk_read(inodeblock.iblks[inodenumber%50].bdata.directblock[i],readfile.data);
+				disk_read(inodeblock.iblks[inodenumber%MAX_INODE_IN_BLOCK].bdata.directblock[i],readfile.data);
 				decrypt(readfile.data,4096, key,strlen(key));
 				printf("%s\n",readfile.data);
 			}
-			else if(i <= 12 && inodeblock.iblks[inodenumber%50].bdata.directblock[i] == 0)
+			else if(i <= 12 && inodeblock.iblks[inodenumber%MAX_INODE_IN_BLOCK].bdata.directblock[i] == 0)
 			{
 				break;
 			}
@@ -480,16 +497,16 @@ int EbFs_set_free_block(int blockno)
 // Function info : deleting entry of file from current directory(call by delete file method)
 int EbFs_delete_file_entery_in_dir(int fileinodenumber)
 {
-	int inodeblockno = CurrDirInode / 50 ;
+	int inodeblockno = CurrDirInode / MAX_INODE_IN_BLOCK ;
 	inodeblockno++;
 	union block_rw inodeblock;
 	disk_read(inodeblockno,inodeblock.data);
 
-	if(inodeblock.iblks[CurrDirInode%50].mdata.filetype)
+	if(inodeblock.iblks[CurrDirInode%MAX_INODE_IN_BLOCK].mdata.filetype)
 	{
 		int i = 0;
 		union block_rw readfile;
-		disk_read(inodeblock.iblks[CurrDirInode%50].bdata.directblock[0],readfile.data);
+		disk_read(inodeblock.iblks[CurrDirInode%MAX_INODE_IN_BLOCK].bdata.directblock[0],readfile.data);
 		for (int i = 0; i < 128; ++i)
 		{	
 			if(!readfile.files[i].filename[0])
@@ -502,7 +519,7 @@ int EbFs_delete_file_entery_in_dir(int fileinodenumber)
 				{
 					if(!readfile.files[j].filename[0])
 					{
-						disk_write(inodeblock.iblks[CurrDirInode%50].bdata.directblock[0],readfile.data);
+						disk_write(inodeblock.iblks[CurrDirInode%MAX_INODE_IN_BLOCK].bdata.directblock[0],readfile.data);
 						break;
 					}
 					printf("%s\n", readfile.files[j].filename);
@@ -519,20 +536,20 @@ int EbFs_delete_file_entery_in_dir(int fileinodenumber)
 // Function info : deleting directory by giving inodenumber from current directory
 int EbFs_delete_directory(int inodenumber)
 {
-	int inodeblockno = inodenumber / 50 ;
+	int inodeblockno = inodenumber / MAX_INODE_IN_BLOCK ;
 	inodeblockno++;
 	union block_rw inodeblock;
 	disk_read(inodeblockno,inodeblock.data);
-	if(inodeblock.iblks[inodenumber%50].mdata.filetype)
+	if(inodeblock.iblks[inodenumber%MAX_INODE_IN_BLOCK].mdata.filetype)
 	{
 		int i = 0;
 		union block_rw readfile;
-		disk_read(inodeblock.iblks[inodenumber%50].bdata.directblock[0],readfile.data);
+		disk_read(inodeblock.iblks[inodenumber%MAX_INODE_IN_BLOCK].bdata.directblock[0],readfile.data);
 		for (int i = 0; i < 128; ++i)
 		{	
 			if(!readfile.files[i].filename[0])
 			{
-				inodeblock.iblks[inodenumber%50].mdata.filetype = 0;
+				inodeblock.iblks[inodenumber%MAX_INODE_IN_BLOCK].mdata.filetype = 0;
 				disk_write(inodeblockno,inodeblock.data);
 				EbFs_delete_file(inodenumber);
 				break;
@@ -547,26 +564,26 @@ int EbFs_delete_directory(int inodenumber)
 // Function info : deleting only file given filename
 int EbFs_delete_file(int inodenumber)
 {
-	int inodeblockno = inodenumber / 50 ;
+	int inodeblockno = inodenumber / MAX_INODE_IN_BLOCK ;
 	inodeblockno++;
 	union block_rw inodeblock;
 	disk_read(inodeblockno,inodeblock.data);
-	if(!inodeblock.iblks[inodenumber%50].mdata.filetype)
+	if(!inodeblock.iblks[inodenumber%MAX_INODE_IN_BLOCK].mdata.filetype)
 	{
 		int i = 0;
 		union block_rw readfile;
 		while(true)
 		{	
 			// reading 12 direct blocks
-			if(i <= 12 && inodeblock.iblks[inodenumber%50].bdata.directblock[i] != 0)
+			if(i <= 12 && inodeblock.iblks[inodenumber%MAX_INODE_IN_BLOCK].bdata.directblock[i] != 0)
 			{
 				char random_4_kb[4096];
 				strcpy(random_4_kb,generate_char_array(4096));
-				EbFs_set_free_block(inodeblock.iblks[inodenumber%50].bdata.directblock[i]);
-				disk_write(inodeblock.iblks[inodenumber%50].bdata.directblock[i],random_4_kb);
-				inodeblock.iblks[inodenumber%50].bdata.directblock[i] = 0;
+				EbFs_set_free_block(inodeblock.iblks[inodenumber%MAX_INODE_IN_BLOCK].bdata.directblock[i]);
+				disk_write(inodeblock.iblks[inodenumber%MAX_INODE_IN_BLOCK].bdata.directblock[i],random_4_kb);
+				inodeblock.iblks[inodenumber%MAX_INODE_IN_BLOCK].bdata.directblock[i] = 0;
 			}
-			else if(i <= 12 && inodeblock.iblks[inodenumber%50].bdata.directblock[i] == 0)
+			else if(i <= 12 && inodeblock.iblks[inodenumber%MAX_INODE_IN_BLOCK].bdata.directblock[i] == 0)
 			{
 				break;
 			}
@@ -574,7 +591,7 @@ int EbFs_delete_file(int inodenumber)
 			
 		}
 		EbFs_delete_file_entery_in_dir(inodenumber);
-		inodeblock.iblks[inodenumber%50].isallocated = 0;
+		inodeblock.iblks[inodenumber%MAX_INODE_IN_BLOCK].isallocated = 0;
 		disk_write(inodeblockno,inodeblock.data);
 		return 1;
 	}
@@ -582,5 +599,42 @@ int EbFs_delete_file(int inodenumber)
 	{
 		printf("Delete Error:: Not Files\n");
 		return -1;
+	}
+}
+
+
+int debugFD(int inodenumber,int flag)
+{
+	// if flag is one return type of file like is file or directory
+	if(flag == 1)
+	{
+		int inodeblockno = inodenumber / MAX_INODE_IN_BLOCK ;
+		inodeblockno++;
+		union block_rw inodeblock;
+		disk_read(inodeblockno,inodeblock.data);
+		return inodeblock.iblks[inodenumber%MAX_INODE_IN_BLOCK].mdata.filetype;
+	}
+	// only use in debugging
+	// print information of allocated data blocks
+	else if(flag == 2)
+	{
+		int inodeblockno = inodenumber / MAX_INODE_IN_BLOCK ;
+		inodeblockno++;
+		union block_rw inodeblock;
+		disk_read(inodeblockno,inodeblock.data);
+		int i = 0;
+		while(true)
+		{	
+			// reading 12 direct blocks
+			if(i <= 12 && inodeblock.iblks[inodenumber%MAX_INODE_IN_BLOCK].bdata.directblock[i] != 0)
+			{
+				printf("Data block allocated: %d %d\n",i,inodeblock.iblks[inodenumber%MAX_INODE_IN_BLOCK].bdata.directblock[i]);
+			}
+			else if(i <= 12 && inodeblock.iblks[inodenumber%MAX_INODE_IN_BLOCK].bdata.directblock[i] == 0)
+			{
+				return 1;
+			}
+			i++;
+		}
 	}
 }

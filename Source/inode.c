@@ -8,7 +8,7 @@
 struct metadata
 {
 	bool filetype;
-	bool fastaccess;
+	bool fastaccess;	// for now by default fastaccess is off.
 };
 
 // Data structure for storing data block of file

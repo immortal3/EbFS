@@ -13,7 +13,7 @@ unsigned long hash(char *str)
 }
 int main(int argc, char const *argv[])
 {
-	char buffer[15];	
+	char buffer[15];
 	printf("\nRunning EbFs");
 	int disk_status = disk_init("Disk_img_500",500);
 	EbFs_format();
@@ -26,7 +26,7 @@ int main(int argc, char const *argv[])
 		printf("\n\n>>>");
 		scanf("%s",buffer);
 
-		// Debug :: printf("hash : %ld\n",hash("help"));
+		// Debug :: printf("hash : %ld\n",hash("debug"));
 		switch(hash(buffer))
 		{	 
 			//command : "ls"
@@ -58,9 +58,16 @@ int main(int argc, char const *argv[])
 
 			//command : "cdparent"
 			case 7572237649815350:
-				go_back_to_parent_directory();
+				if(go_back_to_parent_directory() > 0)
+				{
+					printf("Directory has been changed succesfully\n");
+				}
+				else
+				{
+					printf("Already in Root Directory\n");
+				}
+				
 				break;
-
 
 			// command : "readfile" read file
 			case 7572877634027873:
