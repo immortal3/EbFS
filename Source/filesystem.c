@@ -168,7 +168,22 @@ int EbFs_get_free_block()
 	disk_read(0,blk.data);
 	int temp = blk.sblock.freebitmapstart;
 	union block_rw bitmap;
+	int overhead = (int) blk.sblock.nblocks / 2;
 
+	while(overhead)
+	{
+		int rand_blk_int = rand() % (blk.sblock.nblocks + 1 - blk.sblock.freebitmapstart - blk.sblock.nfreebitmapblocks) + blk.sblock.freebitmapstart + blk.sblock.nfreebitmapblocks;
+		int tempbitmap = (rand_blk_int / 4096) + blk.sblock.freebitmapstart;
+		disk_read(temp,bitmap.data);
+		if(bitmap.data[rand_blk_int % 4096]==0)
+		{
+				printf("block is allocated : %d\n",rand_blk_int );
+				bitmap.data[rand_blk_int % 4096] = 1;
+				disk_write(temp,bitmap.data);
+				return rand_blk_int;
+		}
+		overhead--;
+	}
 	for (int i = 0; i < blk.sblock.nfreebitmapblocks; ++i)
 	{
 		disk_read(temp,bitmap.data);
@@ -183,6 +198,7 @@ int EbFs_get_free_block()
 		}
 		temp = temp + 1;
 	}
+
 }
 
 // Function info : Registering file with current directory

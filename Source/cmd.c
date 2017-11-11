@@ -26,8 +26,7 @@ int main(int argc, char const *argv[])
 		printf("\n\n>>>");
 		scanf("%s",buffer);
 
-		// Debug :: 
-		printf("hash : %ld\n",hash("deletedir"));
+		// Debug :: printf("hash : %ld\n",hash("help"));
 		switch(hash(buffer))
 		{	 
 			//command : "ls"
@@ -122,8 +121,13 @@ int main(int argc, char const *argv[])
 				}
 				break;
 
+			// command : "help"
+			case 6385292014:
+				printf("Help information\n");
+				break;
 			// command : "exit"
 			case 6385204799:
+				disk_close();
 				return 0;
 			default:
 				printf("\n\nNo command Found\n\n");
