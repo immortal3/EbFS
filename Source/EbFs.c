@@ -76,6 +76,8 @@ int main()
 	{
 		printf("success\n");
 	}*/
+
+	printf("Size of inode : %ld\n",sizeof(inode));
 	disk_close();
 }
 
