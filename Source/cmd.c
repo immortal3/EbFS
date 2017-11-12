@@ -124,7 +124,7 @@ int main(int argc, char const *argv[])
 				}
 				else
 				{
-					EbFs_delete_directory(inodetmp);
+					EbFs_delete_file(inodetmp);
 				}
 				break;
 

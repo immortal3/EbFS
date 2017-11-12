@@ -559,7 +559,7 @@ int EbFs_delete_directory(int inodenumber)
 }
 
 
-// Function info : deleting only file given filename
+// Function info : deleting only file given inodenumber
 int EbFs_delete_file(int inodenumber)
 {
 	int inodeblockno = inodenumber / MAX_INODE_IN_BLOCK ;

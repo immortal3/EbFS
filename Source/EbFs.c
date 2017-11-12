@@ -23,6 +23,7 @@ int main()
 	// Debug :: 
 	EbFs_read_superblock();
 	// Debug :: 
+	printf("%d\n", );
 	char filename[] = "morethan4kb.txt";
 	// Important Note : tempstring should be greater than file size
 	// Debug :: 
@@ -77,7 +78,7 @@ int main()
 		printf("success\n");
 	}*/
 
-	printf("Size of inode : %ld\n",sizeof(inode));
+	printf("Size of inode : %ld\n",sizeof(superblock));
 	disk_close();
 }
 
