@@ -5,6 +5,11 @@ Encryption based File system
   
 
 ## Technical Specification(Data Structures):
+### General Overview of Inode Structure
+<img src="https://github.com/immortal3/EbFS/blob/master/Content/new_inode_structure.png">
+### Overview of Project
+<img src="https://github.com/immortal3/EbFS/blob/master/Content/overview.png">
+
 
 Block size of disk : 4096-byte (4 KiB) (which are used by Newer HDDs)
 
@@ -55,7 +60,7 @@ Data Structures:
     used Union block_rw for reading and writing data into disk.
 
 
-##Assumption :
+## Assumption :
 
 - We are using Disk emulator which has no IO scheduling algorithms. 
 
