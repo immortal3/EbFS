@@ -55,8 +55,7 @@ Data Structures:
     used Union block_rw for reading and writing data into disk.
 
 
-
-#Assumption :
+##Assumption :
 
 - We are using Disk emulator which has no IO scheduling algorithms. 
 
