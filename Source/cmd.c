@@ -16,7 +16,6 @@ int main(int argc, char const *argv[])
 	char buffer[15];
 	printf("\nRunning EbFs");
 	int disk_status = disk_init("Disk_img_500",500);
-	EbFs_format();
 	char filename[28];
 	char password[50];
 	int inodetmp;
@@ -26,12 +25,17 @@ int main(int argc, char const *argv[])
 		printf("\n\n>>>");
 		scanf("%s",buffer);
 
-		// Debug :: printf("hash : %ld\n",hash("debug"));
+		// Debug :: printf("hash : %ld\n",hash("format"));
 		switch(hash(buffer))
 		{	 
 			//command : "ls"
 			case 5863588:
 				print_current_directory();
+				break;
+
+			// command : "format"
+			case 6953516807342:
+				EbFs_format();
 				break;
 
 			//command : "readSB" read super block
