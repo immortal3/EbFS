@@ -520,7 +520,6 @@ int EbFs_delete_file_entery_in_dir(int fileinodenumber)
 						disk_write(inodeblock.iblks[CurrDirInode%MAX_INODE_IN_BLOCK].bdata.directblock[0],readfile.data);
 						break;
 					}
-					printf("%s\n", readfile.files[j].filename);
 					strcpy(readfile.files[j].filename,readfile.files[j+1].filename);
 					readfile.files[j].inodenumber = readfile.files[j+1].inodenumber;
 				}
