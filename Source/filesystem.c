@@ -201,7 +201,7 @@ int EbFs_get_free_block()
 		disk_read(temp,bitmap.data);
 		if(bitmap.data[rand_blk_int % DISK_BLOCK_SIZE]==0)
 		{
-				// Debug :: printf("block is allocated : %d\n",rand_blk_int );
+				
 				bitmap.data[rand_blk_int % DISK_BLOCK_SIZE] = 1;
 				disk_write(temp,bitmap.data);
 				return rand_blk_int;
@@ -238,7 +238,7 @@ int Ebfs_entery_file_in_dir(char filename[],int fileinode)
 	{
 		if(readfile.files[i].filename[0] == '\0')
 		{
-			// Debug :: printf("Entry File in current Directory\n");
+			
 			char tempcpy[28];
 			strcpy(tempcpy,filename);
 			memcpy(readfile.files[i].filename,tempcpy,sizeof(char) * 28);
@@ -280,7 +280,7 @@ int EbFs_create_file(char data[],long int size, char name[],bool isDir,char key[
 {
 	union block_rw blk;
 	int newInodeAddr = EbFs_get_free_inode();
-	// Debug :: printf("File Inode : %d\n",newInodeAddr);
+	
 	int inodeblockno = newInodeAddr / MAX_INODE_IN_BLOCK ;
 	inodeblockno++;
 	union block_rw inodeblock;
@@ -374,7 +374,6 @@ int EbFs_append_file(char data[], long int size, int inodenumber,char key[])
 			int newBlockAddr = EbFs_get_free_block();
 			memset(blk.data,0,DISK_BLOCK_SIZE);
 			inodeblock.iblks[inodenumber%MAX_INODE_IN_BLOCK].bdata.directblock[c] = newBlockAddr;
-			// Debug line : printf("%d\n",inodeblock.iblks[newInodeAddr%MAX_INODE_IN_BLOCK].bdata.directblock[c]);
 			int slice_end = (c+1)*DISK_BLOCK_SIZE;
 			if(i < DISK_BLOCK_SIZE)
 			{
@@ -382,7 +381,6 @@ int EbFs_append_file(char data[], long int size, int inodenumber,char key[])
 			}
 			char *slice_ptr = slice_array(data,c*DISK_BLOCK_SIZE,slice_end);
 			strncpy(blk.data, slice_ptr, DISK_BLOCK_SIZE);
-			// Debug line :: printf("writing data : %s\n",blk.data);
 			disk_write(newBlockAddr,blk.data);
 			c++;
 

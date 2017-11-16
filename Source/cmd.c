@@ -11,7 +11,7 @@ unsigned long hash(char *str)
 
     return hash;
 }
-int main(int argc, char const *argv[])
+int main(int argc, char cconst *argv[])
 {
 	char buffer[15];
 	printf("\nRunning EbFs");
