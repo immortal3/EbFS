@@ -43,7 +43,12 @@ int print_current_directory()
 	return EbFs_read_file(CurrDirInode,"no key needed");
 }
 
-
+// Function info : go back to root directory
+void goback_to_root_directory()
+{
+	while(popdir() != 0);
+	CurrDirInode = 0;
+}
 
 // Function info : using stack go back to parent directroy
 int go_back_to_parent_directory()

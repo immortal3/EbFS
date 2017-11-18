@@ -25,7 +25,7 @@ int main(int argc, char const *argv[])
 		printf("\n\n>>>");
 		scanf("%s",buffer);
 
-		// Debug :: printf("hash : %ld\n",hash("format"));
+		// Debug :: printf("hash : %ld\n",hash("cdRoot"));
 		switch(hash(buffer))
 		{	 
 			//command : "ls"
@@ -58,6 +58,11 @@ int main(int argc, char const *argv[])
 					EbFs_delete_directory(inodetmp);
 				}
 				
+				break;
+
+			//command : "cdRoot"
+			case 6953385208688:	
+				goback_to_root_directory();
 				break;
 
 			//command : "cdparent"
