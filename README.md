@@ -64,5 +64,5 @@ Data Structures:
 
 - We are using Disk emulator which has no IO scheduling algorithms. 
 
-## IF you use our code give proper credit.
+
 
